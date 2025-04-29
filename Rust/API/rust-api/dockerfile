@@ -1,0 +1,37 @@
+# Etapa 1: Build
+FROM rust:1.86 AS builder
+
+WORKDIR /usr/src/app
+
+# Copiar dependencias primero (mejor caché)
+COPY Cargo.toml Cargo.lock ./
+RUN mkdir src && echo "fn main() {}" > src/main.rs
+RUN cargo build --release
+
+# Ahora copiar el resto
+COPY . .
+RUN cargo build --release
+
+# Etapa 2: Imagen final
+FROM debian:bookworm  
+
+WORKDIR /app
+
+# Copiar el binario compilado
+COPY --from=builder /usr/src/app/target/release/rust-api .
+
+# Instalar dependencias necesarias
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libssl3 \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Crear usuario no-root
+RUN useradd -m appuser
+USER appuser
+
+# Exponer puerto
+EXPOSE 8080
+
+# Ejecutar
+CMD ["./rust-api"]

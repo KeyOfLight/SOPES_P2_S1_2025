@@ -1,0 +1,12 @@
+FROM golang:1.24-alpine
+
+WORKDIR /app
+
+# Copia los archivos fuente al contenedor
+COPY . .
+
+# Compila la aplicación
+RUN go build -o app .
+
+# Define el comando por defecto
+CMD ["./app"]
