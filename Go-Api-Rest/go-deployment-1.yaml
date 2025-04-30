@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: go-deployment-1
+  labels:
+    app: go-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: go-app
+  template:
+    metadata:
+      labels:
+        app: go-app
+    spec:
+      containers:
+        - name: rest-api
+          image: tu-usuario/rest-api:latest  # Cambia por tu imagen real
+          ports:
+            - containerPort: 8081
+          env:
+            - name: GRPC_SERVER_HOST
+              value: "localhost"
+            - name: GRPC_SERVER_PORT
+              value: "50051"
+        - name: grpc-client-server
+          image: tu-usuario/grpc-client:latest  # Cambia por tu imagen real
+          ports:
+            - containerPort: 50051

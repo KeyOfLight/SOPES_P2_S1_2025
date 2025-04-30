@@ -16,9 +16,17 @@ async fn health_check() -> impl Responder {
 
 #[post("/input")]
 async fn handle_input(info: web::Json<WeatherData>) -> impl Responder {
-    println!("Recibido: {:?}", info);
-    HttpResponse::Ok().json(info.0)
-} 
+    let client = reqwest::Client::new();
+    let res = client.post("http://go-forwarder-service:8081/forward")
+        .json(&*info)
+        .send()
+        .await;
+
+    match res {
+        Ok(_) => HttpResponse::Ok().json(info.0),
+        Err(e) => HttpResponse::InternalServerError().body(format!("Error: {}", e)),
+    }
+}
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {

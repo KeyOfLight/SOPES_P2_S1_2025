@@ -12,16 +12,16 @@ import (
 )
 
 type server struct {
-	pb.UnimplementedUserServiceServer
+	pb.UnimplementedWeatherServiceServer
 }
 
-func (s *server) SendUserData(ctx context.Context, req *pb.UserRequest) (*pb.UserResponse, error) {
+func (s *server) SendWeatherData(ctx context.Context, req *pb.WeatherRequest) (*pb.WeatherResponse, error) {
 	// Imprimir en consola cada solicitud recibida
-	log.Printf("Recibido en Servidor gRCP: Nombre=%s, Edad=%d\n", req.Name, req.Age)
+	log.Printf("Recibido: Descripción=%s, País=%s, Clima=%s\n", req.Description, req.Country, req.Weather)
 
-	// Responder al cliente
-	message := fmt.Sprintf("Datos recibidos correctamente: Nombre=%s, Edad=%d", req.Name, req.Age)
-	return &pb.UserResponse{Message: message}, nil
+	// Crear mensaje de respuesta
+	message := fmt.Sprintf("Datos recibidos correctamente: %s, %s, %s", req.Description, req.Country, req.Weather)
+	return &pb.WeatherResponse{Message: message}, nil
 }
 
 func main() {
@@ -31,7 +31,7 @@ func main() {
 	}
 
 	grpcServer := grpc.NewServer()
-	pb.RegisterUserServiceServer(grpcServer, &server{})
+	pb.RegisterWeatherServiceServer(grpcServer, &server{})
 
 	log.Println("Servidor gRPC corriendo en el puerto 50051...")
 	if err := grpcServer.Serve(listener); err != nil {

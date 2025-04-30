@@ -1,8 +1,12 @@
 syntax = "proto3";
 
-package weather;
+package proto;
 
-option go_package = "grpc-server/proto;proto";
+option go_package = "./";
+
+service WeatherService {
+  rpc SendWeatherData (WeatherRequest) returns (WeatherResponse);
+}
 
 message WeatherRequest {
   string description = 1;
@@ -12,8 +16,4 @@ message WeatherRequest {
 
 message WeatherResponse {
   string message = 1;
-}
-
-service WeatherService {
-  rpc SendWeatherData (WeatherRequest) returns (WeatherResponse);
 }

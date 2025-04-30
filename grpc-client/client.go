@@ -4,43 +4,39 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"time"
+	"net"
 
-	pb "grpc-client/proto"
+	pb "go-deployment-1/proto"
 
 	"google.golang.org/grpc"
 )
 
+type server struct {
+	pb.UnimplementedWeatherServiceServer
+}
+
+func (s *server) SendWeatherData(ctx context.Context, req *pb.WeatherRequest) (*pb.WeatherResponse, error) {
+	// Aquí iría la lógica para publicar a RabbitMQ o Kafka
+	log.Printf("Recibido en gRPC Client Server: Description=%s, Country=%s, Weather=%s",
+		req.Description, req.Country, req.Weather)
+
+	// Aquí puedes llamar a los publicadores (según sea RabbitMQ o Kafka)
+	// Por ahora solo responde
+	msg := fmt.Sprintf("Mensaje recibido: %s en %s (%s)", req.Description, req.Country, req.Weather)
+	return &pb.WeatherResponse{Message: msg}, nil
+}
+
 func main() {
-	// Conectar al servidor gRPC
-	conn, err := grpc.Dial("grpc-server:50051", grpc.WithInsecure(), grpc.WithBlock())
+	listener, err := net.Listen("tcp", ":50051")
 	if err != nil {
-		log.Fatalf("No se pudo conectar al servidor: %v", err)
+		log.Fatalf("No se pudo escuchar en el puerto 50051: %v", err)
 	}
-	defer conn.Close()
 
-	// Crear un cliente gRPC
-	client := pb.NewUserServiceClient(conn)
+	s := grpc.NewServer()
+	pb.RegisterWeatherServiceServer(s, &server{})
 
-	// Enviar solicitudes en un bucle infinito
-	for i := 1; ; i++ {
-		name := fmt.Sprintf("Usuario%d", i)
-		age := 20 + (i % 30) // Genera edades entre 20 y 50
-
-		req := &pb.UserRequest{
-			Name: name,
-			Age:  int32(age),
-		}
-
-		resp, err := client.SendUserData(context.Background(), req)
-		if err != nil {
-			log.Fatalf("Error en la llamada al servicio: %v", err)
-		}
-
-		// Imprimir respuesta del servidor
-		fmt.Println(resp.GetMessage())
-
-		// Esperar 2 segundos antes de enviar la siguiente solicitud
-		time.Sleep(2 * time.Second)
+	log.Println("gRPC Client Server escuchando en el puerto 50051...")
+	if err := s.Serve(listener); err != nil {
+		log.Fatalf("Fallo al iniciar el servidor gRPC: %v", err)
 	}
 }
