@@ -53,7 +53,7 @@ func handlePost(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	// Conectar al servidor gRPC
-	conn, err := grpc.Dial("localhost:50051", grpc.WithInsecure(), grpc.WithBlock(), grpc.WithTimeout(3*time.Second))
+	conn, err := grpc.Dial("grpc-server-service:50051", grpc.WithInsecure(), grpc.WithBlock(), grpc.WithTimeout(3*time.Second))
 	if err != nil {
 		log.Fatalf("No se pudo conectar al servidor gRPC: %v", err)
 	}
