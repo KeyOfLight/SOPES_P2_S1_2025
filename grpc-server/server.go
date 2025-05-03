@@ -8,6 +8,7 @@ import (
 
 	pb "grpc-server/proto"
 
+	"github.com/segmentio/kafka-go"
 	"google.golang.org/grpc"
 )
 
@@ -16,25 +17,48 @@ type server struct {
 }
 
 func (s *server) SendWeatherData(ctx context.Context, req *pb.WeatherRequest) (*pb.WeatherResponse, error) {
-	// Imprimir en consola cada solicitud recibida
-	log.Printf("Recibido: Descripción=%s, País=%s, Clima=%s\n", req.Description, req.Country, req.Weather)
+	log.Printf("📬 grpc-server recibió:\n➡️  description: %s\n🌍 country: %s\n⛅ weather: %s",
+		req.Description, req.Country, req.Weather)
 
-	// Crear mensaje de respuesta
-	message := fmt.Sprintf("Datos recibidos correctamente: %s, %s, %s", req.Description, req.Country, req.Weather)
-	return &pb.WeatherResponse{Message: message}, nil
+	// responseMsg := fmt.Sprintf("✅ Datos recibidos correctamente en grpc-server: %s, %s, %s",
+	// 	req.Description, req.Country, req.Weather)
+
+	message := fmt.Sprintf("description: %s, country: %s, weather: %s", req.Description, req.Country, req.Weather)
+
+	broker := "my-cluster-kafka-bootstrap.kafka.svc.cluster.local:9092" // Dirección del broker Kafka
+	topic := "my.topic"
+
+	writer := &kafka.Writer{
+		Addr:     kafka.TCP(broker),
+		Topic:    topic,
+		Balancer: &kafka.LeastBytes{},
+	}
+	defer writer.Close()
+
+	err := writer.WriteMessages(context.Background(),
+		kafka.Message{
+			Value: []byte(message), // Usamos el mensaje recibido como contenido para Kafka
+		},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("error al enviar mensaje a Kafka: %v", err)
+	}
+
+	respMessage := fmt.Sprintf("Mensaje enviado correctamente: %s", message)
+	return &pb.WeatherResponse{Message: respMessage}, nil
 }
 
 func main() {
 	listener, err := net.Listen("tcp", ":50051")
 	if err != nil {
-		log.Fatalf("Error al iniciar el servidor: %v", err)
+		log.Fatalf("❌ No se pudo iniciar en puerto 50051: %v", err)
 	}
 
 	grpcServer := grpc.NewServer()
 	pb.RegisterWeatherServiceServer(grpcServer, &server{})
 
-	log.Println("Servidor gRPC corriendo en el puerto 50051...")
+	log.Println("🚀 grpc-server escuchando en el puerto 50051...")
 	if err := grpcServer.Serve(listener); err != nil {
-		log.Fatalf("Error al ejecutar el servidor: %v", err)
+		log.Fatalf("❌ Fallo al ejecutar grpc-server: %v", err)
 	}
 }

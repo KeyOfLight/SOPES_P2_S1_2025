@@ -4,9 +4,9 @@ import random
 # Crear un arreglo de 10,000 datos de ejemplo
 weather_data_array = [
     {
-        "Description": f"Descripción {i}",
-        "Country": "GT",
-        "Weather": random.choice(["Soleado", "Lluvioso", "Nublado", "Tormentoso"])
+        "description": f"description {i}",
+        "country": "GT",
+        "weather": random.choice(["Soleado", "Lluvioso", "Nublado", "Tormentoso"])
     }
     for i in range(10000)
 ]

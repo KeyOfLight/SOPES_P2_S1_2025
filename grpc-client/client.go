@@ -2,11 +2,11 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net"
+	"time"
 
-	pb "go-deployment-1/proto"
+	pb "grpc-client/proto"
 
 	"google.golang.org/grpc"
 )
@@ -16,27 +16,50 @@ type server struct {
 }
 
 func (s *server) SendWeatherData(ctx context.Context, req *pb.WeatherRequest) (*pb.WeatherResponse, error) {
-	// Aquí iría la lógica para publicar a RabbitMQ o Kafka
-	log.Printf("Recibido en gRPC Client Server: Description=%s, Country=%s, Weather=%s",
+	// Aquí se reciben los datos enviados desde la API REST
+	log.Printf("✅ Datos recibidos en grpc-client:\n📌 Description: %s\n📌 Country: %s\n📌 Weather: %s\n",
 		req.Description, req.Country, req.Weather)
+	log.Printf("Mensaje recibido en grpc-client: %s en %s (%s)", req.Description, req.Country, req.Weather)
 
-	// Aquí puedes llamar a los publicadores (según sea RabbitMQ o Kafka)
-	// Por ahora solo responde
-	msg := fmt.Sprintf("Mensaje recibido: %s en %s (%s)", req.Description, req.Country, req.Weather)
-	return &pb.WeatherResponse{Message: msg}, nil
+	conn, err := grpc.Dial("grpc-server:50051", grpc.WithInsecure())
+	if err != nil {
+		log.Printf("❌ Error conectando con grpc-server: %v", err)
+		return nil, err
+	}
+	defer conn.Close()
+
+	grpcServerClient := pb.NewWeatherServiceClient(conn)
+
+	ctx2, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	forwardReq := &pb.WeatherRequest{
+		Description: req.Description,
+		Country:     req.Country,
+		Weather:     req.Weather,
+	}
+
+	resp, err := grpcServerClient.SendWeatherData(ctx2, forwardReq)
+	if err != nil {
+		log.Printf("❌ Error reenviando al grpc-server: %v", err)
+		return nil, err
+	}
+
+	return &pb.WeatherResponse{Message: "🔁 Reenviado al grpc-server: " + resp.Message}, nil
 }
 
 func main() {
-	listener, err := net.Listen("tcp", ":50051")
+
+	listener, err := net.Listen("tcp", ":50052")
 	if err != nil {
-		log.Fatalf("No se pudo escuchar en el puerto 50051: %v", err)
+		log.Fatalf("❌ No se pudo escuchar en el puerto 50052: %v", err)
 	}
 
 	s := grpc.NewServer()
 	pb.RegisterWeatherServiceServer(s, &server{})
 
-	log.Println("gRPC Client Server escuchando en el puerto 50051...")
+	log.Println("🚀 grpc-client escuchando en el puerto 50052...")
 	if err := s.Serve(listener); err != nil {
-		log.Fatalf("Fallo al iniciar el servidor gRPC: %v", err)
+		log.Fatalf("❌ Fallo al iniciar el grpc-client: %v", err)
 	}
 }

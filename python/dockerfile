@@ -1,0 +1,14 @@
+# Imagen base ligera con Python
+FROM python:3.10-slim
+
+# Instalar dependencias
+RUN pip install redis
+
+# Crear directorio para el script
+WORKDIR /app
+
+# Copiar el script
+COPY consolidator.py .
+
+# Ejecutar el script
+CMD ["python", "consolidator.py"]

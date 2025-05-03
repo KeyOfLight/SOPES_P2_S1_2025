@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"time"
 
-	pb "go-deployment-1/proto" // Ajusta al path correcto
+	pb "grpc-client/proto" // Ajusta al path correcto
 
 	"google.golang.org/grpc"
 )
@@ -51,7 +51,7 @@ func handlePost(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Respuesta del gRPC: %s", resp.Message)
 }
 
-func main() {
+func rest() {
 	// Conectar al servidor gRPC
 	conn, err := grpc.Dial("grpc-server-service:50051", grpc.WithInsecure(), grpc.WithBlock(), grpc.WithTimeout(3*time.Second))
 	if err != nil {
@@ -66,3 +66,6 @@ func main() {
 	log.Println("API REST escuchando en :8081 ...")
 	log.Fatal(http.ListenAndServe(":8081", nil))
 }
+
+// GENERAR PROTO
+// protoc --go_out=proto --go-grpc_out=proto proto/service.proto

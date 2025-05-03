@@ -21,6 +21,7 @@ WORKDIR /app
 COPY --from=builder /usr/src/app/target/release/rust-api .
 
 # Instalar dependencias necesarias
+# Instalar dependencias necesarias para reqwest
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libssl3 \
     ca-certificates \

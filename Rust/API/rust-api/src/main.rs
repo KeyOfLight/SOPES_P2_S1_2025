@@ -17,7 +17,8 @@ async fn health_check() -> impl Responder {
 #[post("/input")]
 async fn handle_input(info: web::Json<WeatherData>) -> impl Responder {
     let client = reqwest::Client::new();
-    let res = client.post("http://go-forwarder-service:8081/forward")
+    println!("📦 Enviando datos al API REST: {:?}", info);
+    let res = client.post("http://go-api-rest-service.grpc-namespace.svc.cluster.local:8081/input")
         .json(&*info)
         .send()
         .await;
@@ -30,12 +31,13 @@ async fn handle_input(info: web::Json<WeatherData>) -> impl Responder {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    println!("🚀 Iniciando servidor en 0.0.0.0:8080"); // <-- Este log
+
     HttpServer::new(|| {
         App::new()
             .service(handle_input)
             .service(health_check)
     })
-    
     .bind("0.0.0.0:8080")?
     .run()
     .await

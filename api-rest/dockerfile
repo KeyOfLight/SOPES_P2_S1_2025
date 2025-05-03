@@ -1,0 +1,33 @@
+# Etapa 1: build
+FROM golang:1.23 AS builder
+
+# Establecer directorio de trabajo
+WORKDIR /app
+
+# Copiar archivos del proyecto
+COPY go.mod ./
+COPY go.sum ./
+RUN go mod download
+
+COPY . .
+
+# Compilar la aplicación
+RUN go build -o api-rest api-rest.go
+
+# Etapa 2: imagen final
+FROM debian:bookworm
+
+# Crear un usuario no root (opcional pero recomendado)
+RUN useradd -m appuser
+
+# Copiar binario desde etapa anterior
+COPY --from=builder /app/api-rest /usr/local/bin/api-rest
+
+# Usar el usuario no root
+USER appuser
+
+# Exponer puerto 8081
+EXPOSE 8081
+
+# Comando de arranque
+ENTRYPOINT ["/usr/local/bin/api-rest"]

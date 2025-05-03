@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  rust-api:
+    build: ./rust-api
+    ports:
+      - "8080:8080"
+    depends_on:
+      - api-rest
+
+  api-rest:
+    build: ./api-rest
+    ports:
+      - "8081:8081"
+    depends_on:
+      - grpc-server
+
+  grpc-server:
+    build: ./grpc-client
+    ports:
